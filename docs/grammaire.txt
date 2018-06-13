@@ -1,0 +1,270 @@
+
+les éléments notés lit("xxx") ou lexeme("xxx") sont des mots-clés. Les
+éléments de type ':' sont des éléments de ponctuation. Le symbole >
+indique juste que l'élément est suivi par un autre élément. Le symbole *
+signifie "0 ou N fois".
+
+voici la grammaire :
+     atomic_model =
+         section_name
+         > section_parameters
+         > section_state
+         > section_in_ports
+         > section_out_ports
+         > section_init
+         > section_delta_int
+         > section_delta_ext
+         > section_delta_conf
+         > section_ta
+         > section_output
+         ;
+
+     section_name =
+         lit("name") > ':' > identifier > ';'
+         ;
+
+     section_parameters =
+         lit("parameters") > ':' > '{' > parameters > '}'
+         ;
+
+     parameters =
+         *(parameter)
+         ;
+
+     parameter =
+         identifier > ':' > variable_def > '=' > expression > ';'
+         ;
+
+     section_in_ports =
+         lit("in_ports") > ':' > '{' > ports > '}'
+         ;
+
+     ports =
+         *(port)
+         ;
+
+     port =
+         identifier > ':' > '{' > port_variables > '}'
+         ;
+
+     section_out_ports =
+         lit("out_ports") > ':' > '{' > ports > '}'
+         ;
+
+     section_state =
+         lit("state") > ':' > '{' > state_variables > '}'
+         ;
+
+     section_init =
+         lit("init") > ':' > '{' > assignments > '}'
+         ;
+
+     assignments =
+         *(assignment)
+         ;
+
+     assignment = identifier > '=' > expression > ';'
+         ;
+
+     section_delta_int =
+         lit("delta_int") > ':' > '{' > delta_int_functions > '}'
+         ;
+
+     delta_int_functions =
+         *(delta_int_function)
+         ;
+
+     delta_int_function =
+         '(' > expressions > ')' > lit("->") > '(' > expressions > ')'
+         ;
+
+     section_delta_ext =
+         lit("delta_ext") > ':' > '{' > delta_ext_functions > '}'
+         ;
+
+     delta_ext_functions =
+         *('(' > delta_ext_function)
+         ;
+
+     delta_ext_function =
+         '(' > expressions > ')' > ',' > expression > ',' > '{' > event
+         > '}' > ')' > lit("->") > '(' > expressions > ')'
+         ;
+
+     section_delta_conf =
+         lit("delta_conf") > ':' > '{' > delta_conf_functions > '}'
+         ;
+
+     delta_conf_functions =
+         *('(' > delta_conf_function)
+         ;
+
+     delta_conf_function =
+         '(' > expressions > ')' > ',' > '{' > event
+         > '}' > ')' > lit("->") > '(' > expressions > ')'
+         ;
+
+     section_ta =
+         lit("ta") > ':' > '{' > ta_functions > '}'
+         ;
+
+     ta_functions =
+         *(ta_function)
+         ;
+
+     ta_function =
+         '(' > expressions > ')' > lit("->") > expression > ';'
+         ;
+
+     section_output =
+         lit("output") > ':' > '{' > output_functions > '}'
+         ;
+
+     output_functions =
+         *(output_function)
+         ;
+
+     output_function =
+         '(' > expressions > ')' > lit("->") > '{' > events > '}'
+         ;
+
+     events =
+         *(event)
+         ;
+
+     event =
+         identifier > ':' > '{' > expressions > '}'
+         ;
+
+     port_variables =
+         *(port_variable)
+         ;
+
+     port_variable =
+         identifier > ':' > variable_def > ';'
+         ;
+
+     state_variables =
+         *(state_variable)
+         ;
+
+     state_variable =
+         identifier > ':' > variable_def > ';'
+         ;
+
+     variable_def =
+         domain |
+         enum_def |
+         tuple_def |
+         array_def
+         ;
+
+     domain =
+         raw[lexeme["< R >"] |
+         lexeme["< R+ >"] |
+         lexeme["< R- >"] |
+         lexeme["< R* >"] |
+         lexeme["< R+* >"] |
+         lexeme["< R-* >"] |
+         lexeme["< N >"] |
+         lexeme["< Z >"] |
+         lexeme["< C >"] |
+         lexeme["< Q >"]]
+         ;
+
+     enum_def =
+         '{' > identifiers > '}'
+         ;
+
+     tuple_def =
+         '(' > attribute_defs > ')'
+         ;
+
+     array_def =
+         '[' > variable_def > -(',' > uint_ > '/' > uint_ > *(',' >
+uint_)) > ']'
+         ;
+
+     attribute_defs =
+         +(attribute_def)
+         ;
+
+     attribute_def =
+         identifier > ':' > variable_def > ';'
+         ;
+
+     expression =
+         term
+         >> *(   (char_('+') > term)
+             |   (char_('-') > term)
+             )
+         ;
+
+     expressions =
+         -expression >> *(',' > expression)
+         ;
+
+     term =
+         factor
+         >> *(   (char_('*') > factor)
+             |   (char_('/') > factor)
+             )
+         ;
+
+     factor =
+         litteral
+         |   ('(' > expression > ')')
+         |   (char_('-') > factor)
+         |   (char_('+') > factor)
+         ;
+
+     litteral =
+         strict_double
+         | uint_
+         | identifier
+         | ('[' > (array_index_value
+                  | array_value
+                  | array_head_value
+                  | array_tail_value
+                ) > ']')
+         | complex_value
+         | rational_value
+         | tuple_value
+         | char_('_')
+         ;
+
+     array_head_value %=
+         '^' > expression > '|' > expression
+         ;
+
+     array_tail_value %=
+         '$' > expression > '|' > expression
+         ;
+
+     array_index_value =
+         '@' > identifier > ':' > uint_ >> *(':' > uint_)
+         ;
+
+     array_value =
+         '%' > expression >> *(',' > expression)
+         ;
+
+     tuple_value =
+         '|' > expression >> *(',' > expression) > '|'
+         ;
+
+     complex_value =
+         '<' > (strict_double | uint_) > ',' > (strict_double | uint_) > '>'
+         ;
+
+     rational_value =
+         '{' > uint_ > '/' > uint_ > '}'
+         ;
+
+     identifier =
+         raw[lexeme[alpha >> *(alnum | '_')]]
+         ;
+
+     identifiers =
+         identifier >> *(',' > identifier)
+         ;

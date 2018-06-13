@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+.CodeMirror {
+  height: 350px !important;
+}
+
+.cm-artis-grammar { color: #00a8c6; }
+.cm-artis-atomic-models { color: #9FEE00; }
+.cm-artis-section-name { color: #fded02; font-weight: bold; }
+.cm-artis-domains { color: #0000FF; }
+.cm-artis-new-keyword { color: #dd0000; }
+.cm-artis-new-lit { color: #bd93f9; }
+.cm-artis-phase { color: #dd4444; }
